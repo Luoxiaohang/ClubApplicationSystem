@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.clubAppSys.modules.club.mapper.ClubMapper">
+
+	<resultMap id="BaseResultMap" type="Club">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="schoolId" property="schoolId" jdbcType="INTEGER" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="foundTime" property="foundTime" jdbcType="TIMESTAMP" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+
+		<!-- <association property="school" javaType="com.clubAppSys.modules.school.model.School"> 
+			<id column="id" property="id"/> <result column="schoolName" property="name"/> 
+			</association> -->
+
+	</resultMap>
+
+	<!-- 查看某个用户加入了哪些社团 -->
+	<select id="selectClubByUser" resultType="com.clubAppSys.modules.club.DTO.ClubDTO"
+		parameterType="java.lang.Integer">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		school.name
+		schoolName,
+		club.description,
+		club.foundTime
+		FROM
+		club
+		INNER JOIN
+		club_users ON
+		club_users.clubId = club.id
+		INNER JOIN school ON
+		club.schoolId =
+		school.id
+		INNER JOIN users ON users.schoolId = school.id
+		AND
+		club_users.userId = users.id
+		WHERE
+		users.id = #{0}
+		and
+		club_users.state =
+		#{1}
+	</select>
+
+	<!-- 显示所有社团 当状态码state为0时，表示社团已经创建，当state为1表示申请中，2表示申请失败 -->
+	<select id="selectAll" resultType="com.clubAppSys.modules.club.DTO.ClubDTO"
+		parameterType="java.lang.Integer">
+		select club.id clubId,club.schoolId,
+		club.founderId,users.nickName founderName,
+		club.name clubName,
+		club.description,
+		club.foundTime,club.state,clubNum.peopleNum,school.name schoolName
+		from users,school,club LEFT JOIN (select clubId,count(*) peopleNum
+		from
+		club_users where club_users.state=0 GROUP BY clubId ) clubNum
+		on
+		club.id=clubNum.clubId
+		where
+		club.schoolId=school.id and club.state=
+		#{state,jdbcType=INTEGER}
+		and club.founderId=users.id
+		and
+		club.id>#{start} LIMIT #{limit}
+	</select>
+
+	<!-- 根据id搜索社团 -->
+	<select id="selectByPrimaryKey" parameterType="java.lang.Integer"
+		resultType="com.clubAppSys.modules.club.DTO.ClubDTO">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		school.name
+		schoolName,
+		club.description,
+		club.foundTime
+		from
+		club
+		INNER JOIN school ON
+		club.schoolId = school.id
+		where
+		club.state = 0
+		AND club.id
+		=#{id,jdbcType=INTEGER}
+	</select>
+	<!-- 根据名字搜索社团 -->
+	<select id="selectByName" parameterType="java.lang.String"
+		resultType="com.clubAppSys.modules.club.DTO.ClubDTO">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		school.name
+		schoolName,
+		club.description,
+		club.foundTime
+		FROM club
+		INNER JOIN school
+		ON
+		club.schoolId = school.id
+		WHERE
+		club.state = 0
+		AND club.name LIKE
+		'%${_parameter}%'
+	</select>
+	<!-- 根据id删除社团 -->
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from club
+		where
+		club.state = 0
+		AND club.id = #{id}
+	</delete>
+	<!-- 根据名字删除社团 -->
+	<delete id="deleteByName" parameterType="java.lang.String">
+		delete from club
+		where
+		club.state = 0
+		AND name = #{clubName}
+	</delete>
+	<!-- 添加社团 -->
+	<insert id="insert" parameterType="Club">
+		insert into club
+		(name,schoolId,description, foundTime,state,founderId)
+		values (
+		#{name},#{schoolId},
+		#{description},#{foundTime},#{state},#{founderId}
+		)
+	</insert>
+
+	<!-- 根据id更新社团信息 -->
+	<update id="updateByPrimaryKey" parameterType="Club">
+		update club
+		set
+		name = #{name},
+		description = #{description},
+		state = #{state}
+		where
+		id =
+		#{id}
+	</update>
+	<!-- 根据id更新社团状态 -->
+	<update id="updateStateByPrimaryKey" parameterType="java.lang.Integer">
+		update club
+		set
+		state = #{0}
+		where
+		id = #{1}
+	</update>
+	
+	<select id="getTotalCount" resultType="java.lang.Integer">
+		select IFNULL(sum(1),0)
+		from club
+	</select>
+
+</mapper>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.clubAppSys.modules.activity.mapper.ActivitiesMapper">
+	<resultMap id="BaseResultMap" type="Activities">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="theme" property="theme" jdbcType="VARCHAR" />
+		<result column="foundTime" property="foundTime" jdbcType="VARCHAR" />
+		<result column="startTime" property="startTime" jdbcType="VARCHAR" />
+		<result column="endTime" property="endTime" jdbcType="VARCHAR" />
+		<result column="isPublic" property="isPublic" jdbcType="INTEGER" />
+		<result column="foundUserId" property="foundUserId" jdbcType="INTEGER" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="peopleNum" property="peopleNum" jdbcType="INTEGER" />
+		<result column="place" property="place" jdbcType="VARCHAR" />
+		<result column="clubId" property="clubId" jdbcType="INTEGER" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+	</resultMap>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from
+		activities
+		where id = #{id,jdbcType=INTEGER}
+	</delete>
+
+	<!-- 1.创建活动 -->
+	<insert id="insert" parameterType="Activities">
+		insert into activities (id,
+		theme, foundTime,
+		startTime, endTime, isPublic,
+		foundUserId,
+		description, peopleNum,
+		place, clubId)
+		values (#{id,jdbcType=INTEGER},
+		#{theme,jdbcType=VARCHAR},
+		#{foundTime,jdbcType=TIMESTAMP},
+		#{startTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP},
+		#{isPublic,jdbcType=INTEGER},
+		#{foundUserId,jdbcType=INTEGER},
+		#{description,jdbcType=VARCHAR},
+		#{peopleNum,jdbcType=INTEGER},
+		#{place,jdbcType=VARCHAR}, #{clubId,jdbcType=INTEGER})
+	</insert>
+
+	<!-- 2.修改活动 -->
+	<update id="updateByPrimaryKey" parameterType="Activities">
+		update activities
+		set theme = #{theme,jdbcType=VARCHAR},
+		foundTime =
+		#{foundTime,jdbcType=TIMESTAMP},
+		startTime =
+		#{startTime,jdbcType=TIMESTAMP},
+		endTime =
+		#{endTime,jdbcType=TIMESTAMP},
+		isPublic = #{isPublic,jdbcType=INTEGER},
+		foundUserId = #{foundUserId,jdbcType=INTEGER},
+		description =
+		#{description,jdbcType=VARCHAR},
+		peopleNum =
+		#{peopleNum,jdbcType=INTEGER},
+		place = #{place,jdbcType=VARCHAR},
+		clubId = #{clubId,jdbcType=INTEGER}
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+
+	<!-- -->
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select id, theme, foundTime, startTime, endTime,
+		isPublic, foundUserId,
+		description,
+		peopleNum, place, clubId
+		from
+		activities
+		where id = #{id,jdbcType=INTEGER}
+	</select>
+
+	<!-- 3.查找活动 -->
+	<select id="selectAll" resultType="com.clubAppSys.modules.activity.Dto.ActivitiesDTO">
+		SELECT activities.id
+		,club.name
+		clubName ,
+		activities.foundUserId
+		,activities.theme,
+		activities.foundTime ,
+		activities.startTime , activities.endTime
+		,
+		activities.isPublic ,
+		activities.description ,activities.peopleNum ,
+		activities.place,activities.state
+		FROM
+		activities,club
+		WHERE
+		activities.clubId = club.id
+	</select>
+
+	<!--  4.已参与活动 (根据用户id和state查找) , 方法过期!-->
+	<select id="selectByState" parameterType="ActivityUsers"
+		resultMap="BaseResultMap">
+		SELECT activities.id ,activities.clubId ,
+		activities.foundUserId ,activities.theme,
+		activities.foundTime ,
+		activities.startTime ,
+		activities.endTime , activities.isPublic ,
+		activities.description ,activities.peopleNum ,
+		activities.place
+		FROM
+		activities,activity_users
+		WHERE
+		activities.id =
+		activity_users.activityId
+		AND activity_users.state = 1
+		AND
+		activity_users.userId = #{userid}
+	</select> 
+
+	<!-- 4.已参与活动 (根据用户id) -->
+	<select id="getMyActivitis" parameterType="java.lang.Integer" resultType="ActivityAndState">
+		SELECT activitiesFoundUser.id as id,  clubId, clubName, theme, startTime, description,
+				place, state, foundUserId,nickName as foundUserName 
+FROM
+		(SELECT activitiesState.id as id, activitiesState.clubId AS clubId ,`name` as clubName ,
+						theme ,startTime ,activitiesState.description AS description,
+						place,activitiesState.state AS state, foundUserId
+		FROM
+				(SELECT activities.id as id, activities.clubId AS clubId, 
+								foundUserId, theme, startTime, activities.description as description,
+								place, activity_users.state FROM activities,activity_users 
+				WHERE 
+						activities.id = activity_users.activityId 
+				AND activity_users.userId = #{id} 
+				AND activity_users.state = 1)activitiesState ,club
+		WHERE
+			club.id = activitiesState.clubId)activitiesFoundUser,users
+WHERE
+	activitiesFoundUser.foundUserId = users.id
+	</select>
+
+	<!-- 5.参与活动(在活动用户表插入一条记录并查询表中某活动参与总人数,活动表更改活动表人数) -->
+	<!-- 修改人数 -->
+	<update id="updateNum" parameterType="Activities">
+		update activities
+		set
+		peopleNum = #{peopleNum,jdbcType=INTEGER}
+		where id =
+		#{id,jdbcType=INTEGER}
+	</update>
+
+	<!-- 6.退出活动 -->
+	<!-- 调用上面的修改人数 -->
+	
+
+</mapper>

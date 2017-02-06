@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.clubAppSys.modules.club.mapper.ClubUsersMapper">
+	<resultMap id="BaseResultMap" type="ClubUsers">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="userId" property="userId" jdbcType="INTEGER" />
+		<result column="clubId" property="clubId" jdbcType="INTEGER" />
+		<result column="roleId" property="roleId" jdbcType="INTEGER" />
+		<result column="joinTime" property="joinTime" jdbcType="TIMESTAMP" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+	</resultMap>	
+	<!-- 根据用户id查看某用户加入了那些社团且显示职位 -->
+	<select id="selectClubByUser" resultType="com.clubAppSys.modules.club.DTO.ClubUsersDTO"
+	parameterType="java.lang.Integer" >
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		school.name schoolName,
+		role.name clubUserPosition,club_users.roleId,
+		club.description,
+		club.foundTime
+		FROM
+		club_users
+		INNER JOIN club ON club_users.clubId = club.id
+		INNER JOIN school ON club.schoolId = school.id
+		INNER JOIN role ON club_users.roleId = role.id
+		WHERE club_users.userId = #{0}
+		AND club_users.state = #{1}
+	</select>
+	
+	<!-- 根据社团id查看同一社团所有会员 的信息  tested-->
+	<select id="selectClubUsersByClubIdAndState" resultType="com.clubAppSys.modules.club.DTO.ClubUsersDTO"
+	parameterType="java.lang.Integer">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		users.nickName clubUserName,
+		role.name clubUserPosition,
+		users.phone,
+		users.Email mail,
+		club_users.joinTime ,club_users.userId clubUserId
+		FROM
+		club_users
+		INNER JOIN users ON club_users.userId = users.id
+		INNER JOIN role ON club_users.roleId = role.id
+		INNER JOIN club ON club_users.clubId = club.id
+		WHERE 
+		club_users.state = #{state,jdbcType=INTEGER}
+		AND club_users.clubId = #{clubId,jdbcType=INTEGER}
+	</select>
+	<!-- 获取我管理的社团 -->
+	<select id="selectMyMngClub" resultType="com.clubAppSys.modules.club.model.Club"
+	 parameterType="java.lang.Integer">
+	 	SELECT
+		club.id,
+		club.name ,
+		club.description,
+		club.foundTime
+		FROM
+		club,club_users
+		where club_users.clubId = club.id
+		and
+		club_users.userId = #{userId}
+		and club_users.roleId = 2
+	</select>
+	<!-- 根据社团id查看同一社团所有会员 的信息  tested-->
+	<select id="selectAllClubUsersByClubId" resultType="com.clubAppSys.modules.club.DTO.ClubUsersDTO"
+	parameterType="java.lang.Integer">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		users.nickName clubUserName,
+		role.name clubUserPosition,
+		users.phone,
+		users.Email mail,
+		club_users.joinTime,
+		club_users.state,club_users.userId clubUserId
+		FROM
+		club ,club_users,users,role
+		WHERE club_users.userId = users.id
+		AND club_users.roleId = role.id
+		AND club_users.clubId = club.id
+		AND club_users.clubId = #{clubId,jdbcType=INTEGER}
+		AND club_users.state=#{state}
+	</select>
+	
+	
+	
+	<!-- 某一用户申请加入某一社团 -->
+	<insert id="usersAppClub" parameterType="com.clubAppSys.modules.club.model.ClubUsers" >
+		insert into club_users (userId, clubId,
+		roleId, joinTime, state
+		)
+		VALUES (
+		 #{userId},
+		 #{clubId},
+		 #{roleId},
+		#{joinTime},#{state}
+		)
+	</insert>
+	
+	<!--根据userId,clubId在一个社团里搜索会员  -->
+	<select id="selectById" resultType="com.clubAppSys.modules.club.DTO.ClubUsersDTO"
+	parameterType="java.lang.Integer">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		users.nickName clubUserName,
+		role.name clubUserPosition,
+		users.phone,
+		users.Email mail,
+		club_users.joinTime,club_users.userId clubUserId
+		FROM
+		club_users
+		INNER JOIN users ON club_users.userId = users.id
+		INNER JOIN role ON club_users.roleId = role.id
+		INNER JOIN club ON club_users.clubId = club.id
+		WHERE 
+		club_users.clubId=#{0} and users.id=#{1}
+	</select>
+	<!--在一个社团里，根据社团成员名字搜索会员  -->
+	<select id="selectByName" resultType="com.clubAppSys.modules.club.DTO.ClubUsersDTO">
+		SELECT
+		club.id clubId,
+		club.name clubName,
+		users.nickName clubUserName,
+		role.name clubUserPosition,
+		users.phone,
+		users.Email mail,
+		club_users.joinTime,club_users.userId clubUserId
+		FROM
+		users
+		INNER JOIN club_users ON club_users.userId = users.id
+		INNER JOIN club ON club_users.clubId = club.id
+		INNER JOIN role ON users.roleId = role.id AND club_users.roleId = role.id
+		WHERE 
+		club_users.clubId=#{clubId} and users.nickName LIKE '%${nickName}%'
+	</select>
+	
+	<!--根据id删除社团成员  -->
+	<delete id="deleteClubUserById" parameterType="java.lang.Integer">
+		delete from
+		club_users
+		where 
+		userId = #{0} 
+		and clubId = #{1}
+	</delete>
+	<!-- 根据名字删除社团 成员-->
+	<delete id="deleteClubUserByName" parameterType="com.clubAppSys.modules.club.DTO.ClubUsersDTO" >
+		delete from 
+		club_users 
+		where  
+		userId =( select id from users WHERE nickName=#{clubUserName} ) and 
+		clubId=#{clubId};		
+	</delete>
+	
+	<!-- 添加社团成员 -->
+	<insert id="insert" >
+		insert into club_users (userId, clubId,
+		roleId, joinTime, state
+		)
+		VALUES (
+		(SELECT id FROM users WHERE nickName = #{0} ),
+		(SELECT id FROM club WHERE name = #{1} ),
+		(SELECT id FROM role WHERE name = #{2} ),
+		#{3},#{4}
+		)
+	</insert>
+	
+	<!-- 更新社团成员信息 -->
+	<update id="updateByKey" >
+		update club_users
+		set 
+		roleId = #{roleId}
+		where clubId = #{clubId}
+		AND userId = (SELECT id FROM users WHERE nickName = #{4} )
+	</update>
+	
+	<!-- 更新社团成员状态 -->
+	<update id="updateClubUsersState" parameterType="com.clubAppSys.modules.club.model.ClubUsers">
+	update club_users
+	set 
+	state = #{state},
+	roleId = 4
+	where clubId = #{clubId} 
+	AND userId = #{userId} 
+	</update>
+
+</mapper>

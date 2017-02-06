@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.clubAppSys.modules.notify.mapper.ActivityNotifyMapper">
+
+	<resultMap id="BaseResultMap" type="ActivityNotify">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="theme" property="theme" jdbcType="VARCHAR" />
+		<result column="userName" property="userName" jdbcType="VARCHAR" />
+		<result column="clubName" property="clubName" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+
+		<!-- <association property="school" javaType="com.clubAppSys.modules.school.model.School"> 
+			<id column="id" property="id"/> <result column="schoolName" property="name"/> 
+			</association> -->
+
+	</resultMap>
+
+	<select id="getActivityNotifyByState" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select activities.id, activities.theme,club.name
+		clubName,
+		activities.state,users.nickName userName
+		from
+		activities,users,club
+		where
+		activities.state =
+		#{state,jdbcType=INTEGER}
+		and
+		activities.foundUserId=users.id
+		and activities.clubId=club.id
+	</select>
+
+	<select id="getActivityNotifyByStateAndUserId" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select activities.id, activities.theme,
+		activities.state,users.nickName userName
+		from
+		activities,users,activity_users,club
+		where
+		activity_users.state =
+		#{state,jdbcType=INTEGER}
+		and
+		activity_users.userId=users.id
+		and
+		activities.id=activity_users.activityId
+		and activities.clubId=club.id
+	</select>
+
+
+
+</mapper>
